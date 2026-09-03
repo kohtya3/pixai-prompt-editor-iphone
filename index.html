@@ -53,9 +53,18 @@
   }
   .screen { display:flex; flex-direction:column; height:100%; overflow-y:auto; padding-bottom:var(--kb-offset, 0px); transition:padding-bottom 160ms ease; }
   #editScreen { overflow:hidden; padding-bottom:0; }
-  .edit-scroll-area { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; }
-  .search-replace-group { order:1; } /* デフォルトは下部(検索欄と置換欄をまとめて移動) */
-  #editScreen.search-top .search-replace-group { order:-1; }
+  .edit-scroll-area { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;
+    padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px)); transition:padding 160ms ease; }
+  #editScreen.search-top .edit-scroll-area { padding-bottom:0; padding-top:70px; }
+  #editScreen.search-hidden .edit-scroll-area { padding-bottom:0; padding-top:0; }
+  /* スクロールバーの表示/非表示(設定で切替、デフォルトは非表示)。
+     スクロール自体は無効にせず、見た目のバーだけ消す */
+  #app.hide-scrollbars, #app.hide-scrollbars * { scrollbar-width:none; }
+  #app.hide-scrollbars *::-webkit-scrollbar { display:none; width:0; height:0; }
+  .search-replace-group {
+    position:absolute; left:0; right:0; bottom:0; z-index:5;
+  } /* デフォルトは下部固定(スクロール領域の高さ計算から外し、常に画面下に浮かせる) */
+  #editScreen.search-top .search-replace-group { bottom:auto; top:0; }
   #editScreen.search-hidden .search-replace-group { display:none; }
   .hidden { display:none !important; }
 
@@ -193,20 +202,21 @@
   #listBody { padding:0 16px 16px; overflow-y:auto; flex:1; }
   .screen-footer { flex-shrink:0; padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1.5px solid #454851; background:#17181B; }
   .search-replace-group {
-    flex-shrink:0; display:flex; flex-direction:column; gap:6px;
-    padding:6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
+    display:flex; flex-direction:column; gap:4px;
+    padding:4px 12px calc(4px + env(safe-area-inset-bottom, 0px));
     border-top:1.5px solid #454851; background:#17181B;
   }
+  #editScreen.search-top .search-replace-group { border-top:none; border-bottom:1.5px solid #454851; }
   .search-footer, .replace-footer { display:flex; align-items:center; gap:6px; }
   .search-footer input, .replace-footer input {
     flex:1; min-width:0; background:#232428; border:1px solid #454851; border-radius:6px;
-    color:#EDEAE2; padding:6px 8px; font-size:var(--search-font, 13px); font-family:'Zen Kaku Gothic New',sans-serif;
+    color:#EDEAE2; padding:4px 8px; font-size:var(--search-font, 13px); font-family:'Zen Kaku Gothic New',sans-serif;
   }
   .search-count { flex-shrink:0; font-size:var(--search-font, 13px); color:#8f939c; font-family:'JetBrains Mono',monospace; white-space:nowrap; }
   .screen-footer .back-link { display:block; width:100%; text-align:center; padding:12px; }
-  .search-footer .back-link { width:auto; padding:6px 12px; flex-shrink:0; font-size:var(--search-font, 13px); }
+  .search-footer .back-link { width:auto; padding:4px 12px; flex-shrink:0; font-size:var(--search-font, 13px); }
   .replace-btn {
-    flex-shrink:0; width:36px; padding:6px 0; font-size:15px; text-align:center;
+    flex-shrink:0; width:32px; padding:4px 0; font-size:14px; text-align:center;
     font-family:'Space Grotesk',sans-serif; font-weight:700; color:#45474b;
     border:1.5px solid #3a3c42; border-radius:6px; background:#1c1d20; transition:color 120ms ease, border-color 120ms ease;
   }
@@ -2234,7 +2244,7 @@ const DEFAULT_SETTINGS = {
   buttonSize: "medium",
   fontSize: { promptArea: 16, infoArea: 14, ui: 14, search: 13 },
   searchBar: { position: "bottom" },
-  appearance: { tagUnderline: true, toastEnabled: true, toastDuration: 2.8, confirmDelete: true },
+  appearance: { tagUnderline: true, toastEnabled: true, toastDuration: 2.8, confirmDelete: true, hideScrollbars: true },
   analysis: { exceptions: [], commaSpacing: "space" },
   uiState: { collapsedSections: [], expandedTextLists: [] }
 };
@@ -2293,7 +2303,8 @@ const SETTINGS_SCHEMA = [
     items: [
       { key:"tagUnderline", label:"選択タグの下線表示(OFFでOS標準の選択表示のみ)" },
       { key:"toastEnabled", label:"トースト通知の表示" },
-      { key:"confirmDelete", label:"プロンプト削除時に確認ダイアログを表示" }
+      { key:"confirmDelete", label:"プロンプト削除時に確認ダイアログを表示" },
+      { key:"hideScrollbars", label:"スクロールバーを非表示にする" }
     ]
   },
   {
@@ -2350,6 +2361,9 @@ function saveSettings(){
 function applySettings(){
   document.body.className = document.body.className.replace(/\bbtnsize-\S+/g, "").trim();
   document.body.classList.add("btnsize-" + settings.buttonSize);
+
+  const appEl = document.getElementById("app");
+  if(appEl) appEl.classList.toggle("hide-scrollbars", settings.appearance.hideScrollbars);
 
   document.documentElement.style.setProperty("--prompt-area-h", settings.areaHeights.promptArea + "%");
   document.documentElement.style.setProperty("--info-area-h", settings.areaHeights.infoArea + "%");
@@ -2749,6 +2763,29 @@ document.addEventListener("click", (e) => {
   handle.addEventListener("pointermove", onMove);
   handle.addEventListener("pointerup", onUp);
   handle.addEventListener("pointercancel", onUp);
+})();
+
+/* =========================================================
+   iOS対策: 編集画面内の入力欄(プロンプト欄・変換欄・検索欄・置換欄など)に
+   フォーカスが当たった時、iOSがキーボード表示のために画面全体を勝手に
+   スクロールさせてしまうことがある。CSSのoverflow:hiddenより
+   iOS側の挙動が優先されてしまうため、フォーカス直後に強制的に
+   スクロール位置を元へ戻すことで「画面全体が意図せず動く」現象を防ぐ
+========================================================= */
+(function(){
+  const editScreenEl = el("editScreen");
+  if(!editScreenEl) return;
+  function resetScroll(){
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+  editScreenEl.addEventListener("focusin", (e) => {
+    if(e.target.matches("input, textarea")){
+      requestAnimationFrame(resetScroll);
+      setTimeout(resetScroll, 100); // iOSの自動スクロールが遅れて発生する場合の保険
+    }
+  });
 })();
 
 </script>
