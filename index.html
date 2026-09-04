@@ -53,18 +53,18 @@
   }
   .screen { display:flex; flex-direction:column; height:100%; overflow-y:auto; padding-bottom:var(--kb-offset, 0px); transition:padding-bottom 160ms ease; }
   #editScreen { overflow:hidden; padding-bottom:0; }
-  .edit-scroll-area { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;
-    padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px)); transition:padding 160ms ease; }
-  #editScreen.search-top .edit-scroll-area { padding-bottom:0; padding-top:70px; }
-  #editScreen.search-hidden .edit-scroll-area { padding-bottom:0; padding-top:0; }
+  .edit-scroll-area { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; }
   /* スクロールバーの表示/非表示(設定で切替、デフォルトは非表示)。
      スクロール自体は無効にせず、見た目のバーだけ消す */
   #app.hide-scrollbars, #app.hide-scrollbars * { scrollbar-width:none; }
   #app.hide-scrollbars *::-webkit-scrollbar { display:none; width:0; height:0; }
-  .search-replace-group {
-    position:absolute; left:0; right:0; bottom:0; z-index:5;
-  } /* デフォルトは下部固定(スクロール領域の高さ計算から外し、常に画面下に浮かせる) */
-  #editScreen.search-top .search-replace-group { bottom:auto; top:0; }
+  /* 検索・置換欄はedit-scroll-areaの外側にある普通のflex要素のまま扱う。
+     こうすることで「スクロールする部分の高さ計算」から自動的に正しく
+     差し引かれ、なおかつスクロールに巻き込まれて動くこともない
+     (position:absoluteや余白の後付けは不要。二重に余分な高さを
+     作ってしまい、逆に不要なスクロールバーの原因になっていた) */
+  .search-replace-group { flex-shrink:0; order:1; } /* デフォルトは下部 */
+  #editScreen.search-top .search-replace-group { order:-1; }
   #editScreen.search-hidden .search-replace-group { display:none; }
   .hidden { display:none !important; }
 
@@ -104,6 +104,7 @@
     font-family:'Space Grotesk',sans-serif; font-size:13px; color:#c7cad0; background:none; border:none;
     width:30px; height:28px; display:flex; align-items:center; justify-content:center; touch-action:manipulation;
   }
+  .cursor-nav-btn:not(:first-child) { border-left:1px solid #454851; }
   .cursor-nav-btn:active { background:#33353a; border-radius:4px; }
   .prompt-wrap { position:relative; flex:1; }
   .prompt-backdrop, #promptText {
@@ -125,6 +126,7 @@
   /* utility row */
   .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; }
   .util-btn { font-family:'Space Grotesk',sans-serif; font-size:var(--btn-font,10px); color:#c7cad0; background:none; border:none; padding:var(--btn-pad,4px 2px); }
+  .util-btn:not(:first-child) { border-left:1px solid #33353a; margin-left:6px; }
   .setting-hidden { display:none !important; }
   .setting-reset-btn { font-family:'Space Grotesk',sans-serif; font-size:10px; color:#8f939c; background:none; border:1px solid #454851; border-radius:5px; padding:4px 8px; flex-shrink:0; }
   .setting-textlist-editor { padding:0 0 12px; display:flex; flex-direction:column; gap:8px; }
@@ -216,8 +218,8 @@
   .screen-footer .back-link { display:block; width:100%; text-align:center; padding:12px; }
   .search-footer .back-link { width:auto; padding:4px 12px; flex-shrink:0; font-size:var(--search-font, 13px); }
   .replace-btn {
-    flex-shrink:0; width:32px; padding:4px 0; font-size:14px; text-align:center;
-    font-family:'Space Grotesk',sans-serif; font-weight:700; color:#45474b;
+    flex-shrink:0; padding:4px 8px; font-size:12px; text-align:center; white-space:nowrap;
+    font-family:'Zen Kaku Gothic New',sans-serif; font-weight:700; color:#45474b;
     border:1.5px solid #3a3c42; border-radius:6px; background:#1c1d20; transition:color 120ms ease, border-color 120ms ease;
   }
   .replace-btn.active { color:#E8A33D; border-color:#E8A33D; }
@@ -317,9 +319,9 @@
         <button class="back-link" onclick="executeSearch()">検索</button>
       </div>
       <div class="replace-footer" id="replaceFooterBar">
-        <input type="text" id="replaceFromInput" placeholder="検索対象(例: 1.5)" oninput="updateReplaceButtonState()">
-        <button class="replace-btn" id="replaceBtn" onclick="applyReplace()" disabled>→</button>
-        <input type="text" id="replaceToInput" placeholder="置き換え後(例: 1.3、空欄で削除)" oninput="updateReplaceButtonState()">
+        <input type="text" id="replaceFromInput" placeholder="置換前" oninput="updateReplaceButtonState()">
+        <button class="replace-btn" id="replaceBtn" onclick="applyReplace()" disabled>置換→</button>
+        <input type="text" id="replaceToInput" placeholder="置換後(空欄で削除)" oninput="updateReplaceButtonState()">
       </div>
     </div>
   </div>
