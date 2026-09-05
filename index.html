@@ -124,7 +124,7 @@
   .tag-underline { border-bottom:1px solid #FF5CA8; }
 
   /* utility row */
-  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; }
+  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; }
   .util-btn { font-family:'Space Grotesk',sans-serif; font-size:var(--btn-font,10px); color:#c7cad0; background:none; border:none; padding:4px 8px; }
   .util-btn:not(:first-child) { border-left:1px solid #33353a; }
   .setting-hidden { display:none !important; }
@@ -2795,7 +2795,7 @@ document.addEventListener("click", (e) => {
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260905_0932, " + state.pos;
+    state.pos = "build_20260905_1025, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
