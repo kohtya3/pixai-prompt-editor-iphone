@@ -2791,6 +2791,14 @@ document.addEventListener("click", (e) => {
 })();
 
 </script>
-
+<script>
+// 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
+(function(){
+  try {
+    state.pos = "build_20260905_0932, " + state.pos;
+    if (typeof render === "function") render();
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>
