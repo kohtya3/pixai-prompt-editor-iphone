@@ -94,18 +94,20 @@
   .resize-handle-grip { width:48px; height:5px; border-radius:3px; background:#3a3c42; transition:background 120ms ease; }
   .resize-handle:active .resize-handle-grip { background:#E8A33D; }
   body.dir-neg .resize-handle:active .resize-handle-grip { background:#4FC1E0; }
-  /* カーソル移動ボタン: プロンプト欄の右上に4つまとめて半透明で浮かせる */
-  .cursor-nav-float {
-    position:absolute; top:6px; right:6px; z-index:3;
-    display:flex; gap:1px; background:rgba(38,39,43,0.82); border:1px solid #4a4d54; border-radius:6px;
-    backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  /* カーソル移動ボタン: 変換欄の真上に8つ並べる行。各ボタンをflex:1で均等に
+     伸縮させ、区切り線がテキストに対して常に左右均等になるようにする
+     (utility-rowと同じ考え方) */
+  .cursor-nav-row {
+    display:flex; align-items:center; height:30px; margin-bottom:6px;
+    border:1px solid #3a3c42; border-radius:6px; background:#1c1d20; overflow:hidden;
   }
   .cursor-nav-btn {
+    flex:1; min-width:0; text-align:center; white-space:nowrap; overflow:hidden;
     font-family:'Space Grotesk',sans-serif; font-size:13px; color:#c7cad0; background:none; border:none;
-    width:30px; height:28px; display:flex; align-items:center; justify-content:center; touch-action:manipulation;
+    padding:4px 2px; height:100%; touch-action:manipulation;
   }
-  .cursor-nav-btn:not(:first-child) { border-left:1px solid #454851; }
-  .cursor-nav-btn:active { background:#33353a; border-radius:4px; }
+  .cursor-nav-btn:not(:first-child) { border-left:1px solid #3a3c42; }
+  .cursor-nav-btn:active { background:#33353a; }
   .prompt-wrap { position:relative; flex:1; }
   .prompt-backdrop, #promptText {
     position:absolute; inset:0; margin:0; padding:8px;
@@ -263,17 +265,21 @@
           oninput="onPromptInput()" onclick="rememberCursor()" onkeyup="rememberCursor()"
           oncompositionstart="onPromptCompositionStart()" oncompositionend="onPromptCompositionEnd()"
           onselect="rememberCursor()" onblur="rememberCursor()" onscroll="syncBackdropScroll()"></textarea>
-        <div class="cursor-nav-float setting-toggleable" id="cursorNavBtns">
-          <button class="cursor-nav-btn" onclick="jumpToPrevTag()" aria-label="前のタグへ">⏮</button>
-          <button class="cursor-nav-btn" onclick="moveCursorBy(-1)" aria-label="1文字左へ">◀</button>
-          <button class="cursor-nav-btn" onclick="moveCursorBy(1)" aria-label="1文字右へ">▶</button>
-          <button class="cursor-nav-btn" onclick="jumpToNextTag()" aria-label="次のタグへ">⏭</button>
-        </div>
       </div>
       <div class="resize-handle" id="promptResizeHandle"><div class="resize-handle-grip"></div></div>
     </div>
 
     <div class="lang-area" id="langArea">
+      <div class="cursor-nav-row setting-toggleable" id="cursorNavBtns">
+        <button class="cursor-nav-btn" onclick="jumpToPrevTag()" aria-label="前のタグへ">⏮</button>
+        <button class="cursor-nav-btn" onclick="moveCursorBy(-1)" aria-label="1文字左へ">◀</button>
+        <button class="cursor-nav-btn" onclick="moveCursorToTop()" aria-label="プロンプト最上部へ">↑↑</button>
+        <button class="cursor-nav-btn" onclick="moveCursorByLine(-1)" aria-label="1行上へ">↑</button>
+        <button class="cursor-nav-btn" onclick="moveCursorByLine(1)" aria-label="1行下へ">↓</button>
+        <button class="cursor-nav-btn" onclick="moveCursorToBottom()" aria-label="プロンプト最終行へ">↓↓</button>
+        <button class="cursor-nav-btn" onclick="moveCursorBy(1)" aria-label="1文字右へ">▶</button>
+        <button class="cursor-nav-btn" onclick="jumpToNextTag()" aria-label="次のタグへ">⏭</button>
+      </div>
       <div class="lang-input-wrap">
         <input id="langInput" enterkeyhint="done" placeholder="言語変換 / 単語・熟語を入力"
           autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" />
@@ -504,6 +510,44 @@ function moveCursorBy(delta){
   pos = Math.max(0, Math.min(text.length, pos + delta));
   ta.focus();
   ta.setSelectionRange(pos, pos);
+  rememberCursor();
+}
+function moveCursorToTop(){
+  const ta = el("promptText");
+  ta.focus();
+  ta.setSelectionRange(0, 0);
+  rememberCursor();
+}
+function moveCursorToBottom(){
+  const ta = el("promptText");
+  const len = ta.value.length;
+  ta.focus();
+  ta.setSelectionRange(len, len);
+  rememberCursor();
+}
+// カーソルを1行上/下(同じ桁位置、無ければ行末)へ移動する
+function moveCursorByLine(direction){
+  const ta = el("promptText");
+  const text = ta.value;
+  const pos = Math.max(ta.selectionStart, ta.selectionEnd);
+  const lines = text.split("\n");
+  let idx = 0, lineIdx = lines.length - 1, col = lines[lines.length-1].length;
+  for(let i=0;i<lines.length;i++){
+    const lineLen = lines[i].length;
+    if(pos <= idx + lineLen){
+      lineIdx = i;
+      col = pos - idx;
+      break;
+    }
+    idx += lineLen + 1; // 改行文字の分
+  }
+  const targetLineIdx = Math.max(0, Math.min(lines.length - 1, lineIdx + direction));
+  const targetCol = Math.min(col, lines[targetLineIdx].length);
+  let targetPos = 0;
+  for(let i=0;i<targetLineIdx;i++) targetPos += lines[i].length + 1;
+  targetPos += targetCol;
+  ta.focus();
+  ta.setSelectionRange(targetPos, targetPos);
   rememberCursor();
 }
 function jumpToTagBoundary(direction){
@@ -1684,11 +1728,104 @@ function checkUnknownTags(text){
   return issues;
 }
 
+// Danbooruタグとして見つかった語を収集する(折りたたみ表示用)
+function checkKnownTags(text){
+  const tags = flattenTags(text);
+  const issues = [];
+  const seenTag = new Set();
+  tags.forEach(t=>{
+    const plain = t.trim();
+    if(!plain) return;
+    const key = plain.toLowerCase();
+    if(seenTag.has(key)) return;
+    seenTag.add(key);
+    if(!/[a-zA-Z]/.test(plain)) return;
+    const normalized = plain.replace(/\s+/g, '_');
+    if(!(isDanbooruTag(plain) || isDanbooruTag(normalized))) return;
+    issues.push({ type:'known', message:`「${plain}」`, tag:plain });
+  });
+  return issues;
+}
+
 function escapeJsStr(s){
   return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 
+// 不自然な空白・記号の連続を検出する(スペース2連続、同じ記号の3連続以上)。
+// ただし "...", "^^^", "+++" のようにDanbooruタグとして実在する記号の並びは除外する
+function checkUnnaturalPunctuation(text){
+  let count = (text.match(/ {2,}/g) || []).length;
+  const symbolMatches = text.match(/([!?._~^+-])\1{2,}/g) || [];
+  count += symbolMatches.filter(m => !isDanbooruTag(m)).length;
+  if(count === 0) return [];
+  return [{ type:'unnatural_punct', message:`不自然な空白・記号の連続が${count}件あります` }];
+}
+function fixUnnaturalPunctuation(text){
+  let result = text.replace(/ {2,}/g, ' ');
+  result = result.replace(/([!?._~^+-])\1{2,}/g, m => isDanbooruTag(m) ? m : m[0]);
+  return result;
+}
+
+// 括弧の直後・直前だけにある不要なスペースを検出する(例: "( red )" の前後2箇所)。
+// "( red hair)" のように単語間にあるスペースは、括弧に隣接していないので対象外
+function checkBracketSpacing(text){
+  const afterOpen = text.match(/[([（［]\s+/g) || [];
+  const beforeClose = text.match(/\s+[)\]）］]/g) || [];
+  const count = afterOpen.length + beforeClose.length;
+  if(count === 0) return [];
+  return [{ type:'bracket_space', message:`括弧の内側に不要なスペースが${count}件あります` }];
+}
+function fixBracketSpacing(text){
+  let result = text.replace(/([([（［])\s+/g, '$1');
+  result = result.replace(/\s+([)\]）］])/g, '$1');
+  return result;
+}
+
+// 閉じ括弧の直後に、カンマを挟まず開き括弧が続くパターン(強調のし忘れで
+// タグ間のカンマを忘れがちな箇所)を検出する。例: "(red_hair:1.3)(green_eyes:1.2)"
+function checkMissingCommaBetweenGroups(text){
+  const matches = text.match(/[)\]）］]\s*[([（［]/g) || [];
+  const count = matches.length;
+  if(count === 0) return [];
+  return [{ type:'missing_comma', message:`括弧が続けて閉じ開きされていて、カンマが抜けている可能性が${count}件あります` }];
+}
+function fixMissingCommaBetweenGroups(text){
+  const mode = (settings.analysis && settings.analysis.commaSpacing) || "space";
+  const sep = mode === "space" ? ", " : ",";
+  return text.replace(/[)\]）］]\s*[([（］]/g, m => m[0] + sep + m[m.length-1]);
+}
+
+// キーボードの適当打ちのような不自然な英単語を検出する(タグ内をアンダースコア・
+// スペースで単語ごとに分解して調べる)。誤検出を避けるため、6文字未満の短い語
+// (rgb、npc等の略語で母音を含まないものが多い)は対象外にしている。
+// 「未登録タグ」と違い辞書には一切照合しない、純粋に文字の並びだけの判定。
+function checkGibberishWords(text){
+  const tags = flattenTags(text);
+  const exceptions = new Set((settings.analysis && settings.analysis.exceptions) || []);
+  const issues = [];
+  const seen = new Set();
+  tags.forEach(t=>{
+    const plain = t.trim();
+    if(!plain) return;
+    plain.split(/[_\s]+/).filter(Boolean).forEach(w=>{
+      if(w.length < 6 || !/^[a-zA-Z]+$/.test(w)) return;
+      const key = w.toLowerCase();
+      if(exceptions.has(key) || seen.has(key)) return;
+      const noVowel = !/[aeiouAEIOU]/.test(w);
+      const longConsonantRun = /[^aeiouAEIOU]{6,}/.test(w); // 子音などが6文字以上連続(asdfghjklのような配列に対応)
+      const repeatedChar = /(.)\1{4,}/.test(w); // 同じ文字が5回以上連続
+      if(noVowel || longConsonantRun || repeatedChar){
+        seen.add(key);
+        issues.push({ type:'gibberish', message:`「${w}」`, word:w });
+      }
+    });
+  });
+  return issues;
+}
+
 let analysisUnknownCollapsed = true;
+let analysisKnownCollapsed = true;
+let analysisGibberishCollapsed = true;
 let lastAnalysisResult = null;
 
 // 改行の使用を検出する(削除するかどうかは分析結果のボタンでユーザーが選ぶ)
@@ -1708,9 +1845,14 @@ function analyzePrompt(){
     ...checkBracketBalance(text),
     ...checkCommaSpacing(text),
     ...checkStrayPunctuation(text),
+    ...checkUnnaturalPunctuation(text),
+    ...checkBracketSpacing(text),
+    ...checkMissingCommaBetweenGroups(text),
     ...checkDuplicates(text),
     ...checkNewlines(text),
-    ...checkUnknownTags(text)
+    ...checkUnknownTags(text),
+    ...checkKnownTags(text),
+    ...checkGibberishWords(text)
   ];
   lastAnalysisResult = { tokenInfo, issues };
   renderAnalysisResults(tokenInfo, issues);
@@ -1718,6 +1860,15 @@ function analyzePrompt(){
 
 function toggleUnknownTagsCollapse(){
   analysisUnknownCollapsed = !analysisUnknownCollapsed;
+  if(lastAnalysisResult) renderAnalysisResults(lastAnalysisResult.tokenInfo, lastAnalysisResult.issues);
+}
+function toggleKnownTagsCollapse(){
+  analysisKnownCollapsed = !analysisKnownCollapsed;
+  if(lastAnalysisResult) renderAnalysisResults(lastAnalysisResult.tokenInfo, lastAnalysisResult.issues);
+}
+
+function toggleGibberishCollapse(){
+  analysisGibberishCollapsed = !analysisGibberishCollapsed;
   if(lastAnalysisResult) renderAnalysisResults(lastAnalysisResult.tokenInfo, lastAnalysisResult.issues);
 }
 
@@ -1734,9 +1885,11 @@ function renderAnalysisResults(tokenInfo, issues){
   </div>`;
 
   const unknownIssues = issues.filter(i => i.type === 'unknown');
-  const otherIssues = issues.filter(i => i.type !== 'unknown');
+  const knownIssues = issues.filter(i => i.type === 'known');
+  const gibberishIssues = issues.filter(i => i.type === 'gibberish');
+  const otherIssues = issues.filter(i => !['unknown','known','gibberish'].includes(i.type));
 
-  if(otherIssues.length === 0 && unknownIssues.length === 0){
+  if(otherIssues.length === 0 && unknownIssues.length === 0 && knownIssues.length === 0 && gibberishIssues.length === 0){
     html += '<div class="info-empty">他に問題は見つかりませんでした</div>';
   } else {
     html += otherIssues.map(renderIssueRow).join("");
@@ -1748,6 +1901,28 @@ function renderAnalysisResults(tokenInfo, issues){
         </div>
         <div class="settings-section-body${analysisUnknownCollapsed ? " collapsed" : ""}">
           ${unknownIssues.map(renderIssueRow).join("")}
+        </div>
+      </div>`;
+    }
+    if(gibberishIssues.length > 0){
+      html += `<div class="analysis-issue">
+        <div class="analysis-issue-text analysis-collapse-head" onclick="toggleGibberishCollapse()">
+          不自然な英単語(キーボード適当打ちの可能性)が${gibberishIssues.length}件
+          <span class="section-chevron">${analysisGibberishCollapsed ? "▸" : "▾"}</span>
+        </div>
+        <div class="settings-section-body${analysisGibberishCollapsed ? " collapsed" : ""}">
+          ${gibberishIssues.map(renderIssueRow).join("")}
+        </div>
+      </div>`;
+    }
+    if(knownIssues.length > 0){
+      html += `<div class="analysis-issue">
+        <div class="analysis-issue-text analysis-collapse-head" onclick="toggleKnownTagsCollapse()">
+          Danbooruタグに登録されている語が${knownIssues.length}件
+          <span class="section-chevron">${analysisKnownCollapsed ? "▸" : "▾"}</span>
+        </div>
+        <div class="settings-section-body${analysisKnownCollapsed ? " collapsed" : ""}">
+          ${knownIssues.map(renderIssueRow).join("")}
         </div>
       </div>`;
     }
@@ -1763,6 +1938,25 @@ function renderIssueRow(issue){
   if(issue.type === 'stray'){
     return `<div class="analysis-issue"><span class="analysis-issue-text">${issue.message}</span>
       <button class="setting-reset-btn" onclick="applyStrayPunctuationFix()">一括削除</button></div>`;
+  }
+  if(issue.type === 'unnatural_punct'){
+    return `<div class="analysis-issue"><span class="analysis-issue-text">${issue.message}</span>
+      <button class="setting-reset-btn" onclick="applyUnnaturalPunctuationFix()">一括修正</button></div>`;
+  }
+  if(issue.type === 'bracket_space'){
+    return `<div class="analysis-issue"><span class="analysis-issue-text">${issue.message}</span>
+      <button class="setting-reset-btn" onclick="applyBracketSpacingFix()">一括修正</button></div>`;
+  }
+  if(issue.type === 'missing_comma'){
+    return `<div class="analysis-issue"><span class="analysis-issue-text">${issue.message}</span>
+      <button class="setting-reset-btn" onclick="applyMissingCommaFix()">一括修正</button></div>`;
+  }
+  if(issue.type === 'gibberish'){
+    return `<div class="analysis-issue">
+      <span class="analysis-issue-text">${issue.message}</span>
+      <button class="setting-reset-btn" onclick="applyRemoveGibberish('${escapeJsStr(issue.word)}')">削除</button>
+      <button class="setting-reset-btn" onclick="addAnalysisException('${escapeJsStr(issue.word.toLowerCase())}')">例外登録(以後警告しない)</button>
+    </div>`;
   }
   if(issue.type === 'duplicate'){
     return `<div class="analysis-issue"><span class="analysis-issue-text">${issue.message}</span>
@@ -1814,6 +2008,47 @@ function applyStrayPunctuationFix(){
   updateBackdrop();
   analyzePrompt();
   toast("不要な記号を削除しました");
+}
+function applyUnnaturalPunctuationFix(){
+  const fixed = fixUnnaturalPunctuation(state[dir]);
+  state[dir] = fixed;
+  el("promptText").value = fixed;
+  lastCursor[dir] = { start:0, end:0 };
+  pushHistory();
+  updateBackdrop();
+  analyzePrompt();
+  toast("不自然な空白・記号を修正しました");
+}
+function applyBracketSpacingFix(){
+  const fixed = fixBracketSpacing(state[dir]);
+  state[dir] = fixed;
+  el("promptText").value = fixed;
+  lastCursor[dir] = { start:0, end:0 };
+  pushHistory();
+  updateBackdrop();
+  analyzePrompt();
+  toast("括弧内の不要なスペースを削除しました");
+}
+function applyMissingCommaFix(){
+  const fixed = fixMissingCommaBetweenGroups(state[dir]);
+  state[dir] = fixed;
+  el("promptText").value = fixed;
+  lastCursor[dir] = { start:0, end:0 };
+  pushHistory();
+  updateBackdrop();
+  analyzePrompt();
+  toast("抜けていたカンマを追加しました");
+}
+function applyRemoveGibberish(word){
+  if(!state[dir].includes(word)){ toast("該当箇所が見つかりませんでした(既に編集された可能性があります)"); return; }
+  const fixed = state[dir].split(word).join("");
+  state[dir] = fixed;
+  el("promptText").value = fixed;
+  lastCursor[dir] = { start:0, end:0 };
+  pushHistory();
+  updateBackdrop();
+  analyzePrompt();
+  toast(`「${word}」を削除しました`);
 }
 function addAnalysisException(tagLower){
   if(!settings.analysis) settings.analysis = { exceptions: [] };
@@ -2795,7 +3030,7 @@ document.addEventListener("click", (e) => {
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260905_1946, " + state.pos;
+    state.pos = "build_20260906_2019, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
