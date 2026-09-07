@@ -271,14 +271,14 @@
 
     <div class="lang-area" id="langArea">
       <div class="cursor-nav-row setting-toggleable" id="cursorNavBtns">
-        <button class="cursor-nav-btn" data-role="tagPrev" onmousedown="event.preventDefault()" onclick="jumpToPrevTag()" aria-label="前のタグへ">◀◀</button>
-        <button class="cursor-nav-btn" data-role="charLeft" onmousedown="event.preventDefault()" onclick="moveCursorBy(-1)" aria-label="1文字左へ">◀</button>
-        <button class="cursor-nav-btn" data-role="top" onmousedown="event.preventDefault()" onclick="moveCursorToTop()" aria-label="プロンプト最上部へ">▲▲</button>
-        <button class="cursor-nav-btn" data-role="lineUp" onmousedown="event.preventDefault()" onclick="moveCursorByLine(-1)" aria-label="1行上へ">▲</button>
-        <button class="cursor-nav-btn" data-role="lineDown" onmousedown="event.preventDefault()" onclick="moveCursorByLine(1)" aria-label="1行下へ">▼</button>
-        <button class="cursor-nav-btn" data-role="bottom" onmousedown="event.preventDefault()" onclick="moveCursorToBottom()" aria-label="プロンプト最終行へ">▼▼</button>
-        <button class="cursor-nav-btn" data-role="charRight" onmousedown="event.preventDefault()" onclick="moveCursorBy(1)" aria-label="1文字右へ">▶</button>
-        <button class="cursor-nav-btn" data-role="tagNext" onmousedown="event.preventDefault()" onclick="jumpToNextTag()" aria-label="次のタグへ">▶▶</button>
+        <button class="cursor-nav-btn" data-role="tagPrev" aria-label="前のタグへ">◀◀</button>
+        <button class="cursor-nav-btn" data-role="charLeft" aria-label="1文字左へ">◀</button>
+        <button class="cursor-nav-btn" data-role="top" aria-label="プロンプト最上部へ">▲▲</button>
+        <button class="cursor-nav-btn" data-role="lineUp" aria-label="1行上へ">▲</button>
+        <button class="cursor-nav-btn" data-role="lineDown" aria-label="1行下へ">▼</button>
+        <button class="cursor-nav-btn" data-role="bottom" aria-label="プロンプト最終行へ">▼▼</button>
+        <button class="cursor-nav-btn" data-role="charRight" aria-label="1文字右へ">▶</button>
+        <button class="cursor-nav-btn" data-role="tagNext" aria-label="次のタグへ">▶▶</button>
       </div>
       <div class="lang-input-wrap">
         <input id="langInput" enterkeyhint="done" placeholder="言語変換 / 単語・熟語を入力"
@@ -2966,10 +2966,14 @@ function resetSearchState(){
 document.addEventListener("click", (e) => {
   const active = document.activeElement;
   const isEditing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+  const targetIsEditable = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
   // カーソル移動ボタンのタップは「入力欄の外側をタップした」扱いにしない。
   // (ボタン内でta.focus()し直した直後にこのリスナーがblur()してしまい、
   //  キーボードが閉じてカーソル位置が分からなくなるバグの対策)
-  if(isEditing && e.target !== active && !e.target.closest(".cursor-nav-btn")){
+  // 同様に、プロンプト欄↔変換欄のように「別の入力欄」へのタップも対象外にする。
+  // ここでblur()してしまうと、ブラウザ本来のフォーカス移動より先にキーボードが
+  // 閉じ、直後に開き直す「ちらつき」の原因になっていた
+  if(isEditing && e.target !== active && !targetIsEditable && !e.target.closest(".cursor-nav-btn")){
     active.blur();
   }
 });
@@ -3047,12 +3051,59 @@ document.addEventListener("click", (e) => {
   });
 })();
 
+/* =========================================================
+   カーソル移動ボタン: 押しっぱなしで連続発火(長押しリピート)
+   ・pointerdownで即1回実行し、preventDefault()でフォーカス(キーボード)を
+     一切奪わないようにする(mousedownより確実にiOSのフォーカス移動を防げる)
+   ・一定時間(REPEAT_DELAY)押し続けたら、一定間隔(REPEAT_INTERVAL)で
+     自動的に繰り返し実行する
+========================================================= */
+function navTagPrev(){ jumpToPrevTag(); }
+function navCharLeft(){ moveCursorBy(-1); }
+function navTop(){ moveCursorToTop(); }
+function navLineUp(){ moveCursorByLine(-1); }
+function navLineDown(){ moveCursorByLine(1); }
+function navBottom(){ moveCursorToBottom(); }
+function navCharRight(){ moveCursorBy(1); }
+function navTagNext(){ jumpToNextTag(); }
+
+(function(){
+  const CURSOR_NAV_ACTIONS = {
+    tagPrev: navTagPrev, charLeft: navCharLeft, top: navTop, lineUp: navLineUp,
+    lineDown: navLineDown, bottom: navBottom, charRight: navCharRight, tagNext: navTagNext
+  };
+  const REPEAT_DELAY = 400;   // 最初の連続発火が始まるまでの待ち時間(ms)
+  const REPEAT_INTERVAL = 80; // 連続発火の間隔(ms)
+
+  document.querySelectorAll(".cursor-nav-btn[data-role]").forEach(btn=>{
+    const action = CURSOR_NAV_ACTIONS[btn.dataset.role];
+    if(!action) return;
+    let holdTimeout = null, holdInterval = null;
+    function stop(){
+      if(holdTimeout){ clearTimeout(holdTimeout); holdTimeout = null; }
+      if(holdInterval){ clearInterval(holdInterval); holdInterval = null; }
+    }
+    function start(e){
+      e.preventDefault(); // フォーカスを奪わせない(キーボードの開閉ちらつき対策)
+      action();
+      stop();
+      holdTimeout = setTimeout(()=>{
+        holdInterval = setInterval(action, REPEAT_INTERVAL);
+      }, REPEAT_DELAY);
+    }
+    btn.addEventListener("pointerdown", start);
+    btn.addEventListener("pointerup", stop);
+    btn.addEventListener("pointerleave", stop);
+    btn.addEventListener("pointercancel", stop);
+  });
+})();
+
 </script>
 <script>
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260907_0458, " + state.pos;
+    state.pos = "build_20260907_1154, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
