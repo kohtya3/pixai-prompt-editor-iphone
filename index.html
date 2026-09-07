@@ -271,14 +271,14 @@
 
     <div class="lang-area" id="langArea">
       <div class="cursor-nav-row setting-toggleable" id="cursorNavBtns">
-        <button class="cursor-nav-btn" onclick="jumpToPrevTag()" aria-label="前のタグへ">⏮</button>
-        <button class="cursor-nav-btn" onclick="moveCursorBy(-1)" aria-label="1文字左へ">◀</button>
-        <button class="cursor-nav-btn" onclick="moveCursorToTop()" aria-label="プロンプト最上部へ">↑↑</button>
-        <button class="cursor-nav-btn" onclick="moveCursorByLine(-1)" aria-label="1行上へ">↑</button>
-        <button class="cursor-nav-btn" onclick="moveCursorByLine(1)" aria-label="1行下へ">↓</button>
-        <button class="cursor-nav-btn" onclick="moveCursorToBottom()" aria-label="プロンプト最終行へ">↓↓</button>
-        <button class="cursor-nav-btn" onclick="moveCursorBy(1)" aria-label="1文字右へ">▶</button>
-        <button class="cursor-nav-btn" onclick="jumpToNextTag()" aria-label="次のタグへ">⏭</button>
+        <button class="cursor-nav-btn" data-role="tagPrev" onmousedown="event.preventDefault()" onclick="jumpToPrevTag()" aria-label="前のタグへ">◀◀</button>
+        <button class="cursor-nav-btn" data-role="charLeft" onmousedown="event.preventDefault()" onclick="moveCursorBy(-1)" aria-label="1文字左へ">◀</button>
+        <button class="cursor-nav-btn" data-role="top" onmousedown="event.preventDefault()" onclick="moveCursorToTop()" aria-label="プロンプト最上部へ">▲▲</button>
+        <button class="cursor-nav-btn" data-role="lineUp" onmousedown="event.preventDefault()" onclick="moveCursorByLine(-1)" aria-label="1行上へ">▲</button>
+        <button class="cursor-nav-btn" data-role="lineDown" onmousedown="event.preventDefault()" onclick="moveCursorByLine(1)" aria-label="1行下へ">▼</button>
+        <button class="cursor-nav-btn" data-role="bottom" onmousedown="event.preventDefault()" onclick="moveCursorToBottom()" aria-label="プロンプト最終行へ">▼▼</button>
+        <button class="cursor-nav-btn" data-role="charRight" onmousedown="event.preventDefault()" onclick="moveCursorBy(1)" aria-label="1文字右へ">▶</button>
+        <button class="cursor-nav-btn" data-role="tagNext" onmousedown="event.preventDefault()" onclick="jumpToNextTag()" aria-label="次のタグへ">▶▶</button>
       </div>
       <div class="lang-input-wrap">
         <input id="langInput" enterkeyhint="done" placeholder="言語変換 / 単語・熟語を入力"
@@ -2479,6 +2479,7 @@ const DEFAULT_SETTINGS = {
   },
   areaHeights: { promptArea: 38, infoArea: 32 },
   buttonSize: "medium",
+  cursorNavLayout: "1",
   fontSize: { promptArea: 16, infoArea: 14, ui: 14, search: 13 },
   searchBar: { position: "bottom" },
   appearance: { tagUnderline: true, toastEnabled: true, toastDuration: 2.8, confirmDelete: true, hideScrollbars: true },
@@ -2533,6 +2534,15 @@ const SETTINGS_SCHEMA = [
       { key:"analyzeBtn", label:"分析" },
       { key:"saveBtn", label:"保存" },
       { key:"cursorNavBtns", label:"カーソル移動ボタン(1文字/タグ単位で前後移動)" }
+    ]
+  },
+  {
+    section: "カーソル移動ボタン", type: "radio", path: "cursorNavLayout",
+    label: "並び順", noReset: true,
+    options: [
+      {value:"1", label:"パターン1(既定・左右→上下→左右)"},
+      {value:"2", label:"パターン2(左右→上下)"},
+      {value:"3", label:"パターン3(上下→左右)"}
     ]
   },
   {
@@ -2601,6 +2611,18 @@ function applySettings(){
 
   const appEl = document.getElementById("app");
   if(appEl) appEl.classList.toggle("hide-scrollbars", settings.appearance.hideScrollbars);
+
+  // カーソル移動ボタンの並び順(設定で3パターンから選択)
+  const CURSOR_NAV_LAYOUTS = {
+    "1": ["tagPrev","charLeft","top","lineUp","lineDown","bottom","charRight","tagNext"],
+    "2": ["tagPrev","charLeft","charRight","tagNext","top","lineUp","lineDown","bottom"],
+    "3": ["top","lineUp","lineDown","bottom","tagPrev","charLeft","charRight","tagNext"]
+  };
+  const navOrder = CURSOR_NAV_LAYOUTS[settings.cursorNavLayout] || CURSOR_NAV_LAYOUTS["1"];
+  document.querySelectorAll(".cursor-nav-btn").forEach(btn=>{
+    const idx = navOrder.indexOf(btn.dataset.role);
+    if(idx !== -1) btn.style.order = idx;
+  });
 
   document.documentElement.style.setProperty("--prompt-area-h", settings.areaHeights.promptArea + "%");
   document.documentElement.style.setProperty("--info-area-h", settings.areaHeights.infoArea + "%");
@@ -3030,7 +3052,7 @@ document.addEventListener("click", (e) => {
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260906_2019, " + state.pos;
+    state.pos = "build_20260907_0458, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
