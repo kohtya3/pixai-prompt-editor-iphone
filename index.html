@@ -3098,6 +3098,33 @@ function navTagNext(){ jumpToNextTag(); }
   });
 })();
 
+/* =========================================================
+   変換欄・検索欄・置換欄がキーボードに隠れる対策。
+   iOS側のキーボード高さ検知(visualViewport、interactive-widget=resizes-content)は
+   どちらも実機で反映が不安定/遅延することを確認済みのため、キーボードを検知する
+   アプローチ自体をやめる。代わりに、これらの欄のどれかにフォーカスしている間は
+   プロンプト欄を強制的に小さくして、下側に確実な空きを作る(キーボードの実際の
+   高さに関わらず、常に一定の余裕を確保できる)
+========================================================= */
+(function(){
+  const TARGET_SELECTOR = "#langInput, #searchInput, #replaceFromInput, #replaceToInput";
+  const SHRUNK_BASIS = "15%";
+  const promptAreaEl = document.getElementById("promptArea");
+  if(!promptAreaEl) return;
+  function isTarget(t){ return !!(t && t.matches && t.matches(TARGET_SELECTOR)); }
+  document.addEventListener("focusin", (e) => {
+    if(isTarget(e.target)) promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+  });
+  document.addEventListener("focusout", (e) => {
+    if(!isTarget(e.target)) return;
+    setTimeout(() => {
+      if(!isTarget(document.activeElement)){
+        promptAreaEl.style.flexBasis = settings.areaHeights.promptArea + "%";
+      }
+    }, 50);
+  });
+})();
+
 
 
 </script>
@@ -3105,7 +3132,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260908_1318, " + state.pos;
+    state.pos = "build_20260908_1335approx, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
