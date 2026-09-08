@@ -66,6 +66,10 @@
   .search-replace-group { flex-shrink:0; order:1; } /* デフォルトは下部 */
   #editScreen.search-top .search-replace-group { order:-1; }
   #editScreen.search-hidden .search-replace-group { display:none; }
+  /* 検索欄は情報エリアの直上に、通常のスクロール要素として配置する
+     (画面下部に固定すると、キーボード表示時に隠れてしまうため) */
+  .search-footer { flex-shrink:0; margin:6px 16px; padding:0; }
+  #editScreen.search-hidden .search-footer { display:none; }
   .hidden { display:none !important; }
 
   /* header */
@@ -307,6 +311,14 @@
       <button class="util-btn save setting-toggleable" onclick="savePrompt()" id="saveBtn">保存</button>
     </div>
 
+    <div class="search-footer setting-toggleable" id="searchFooterBar">
+      <input type="text" id="searchInput" placeholder="プロンプト内を検索(2文字以上)"
+        oninput="onSearchInput()"
+        onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeSearch(); }">
+      <span id="searchCount" class="search-count"></span>
+      <button class="back-link" onclick="executeSearch()">検索</button>
+    </div>
+
     <div class="info-area" id="infoArea">
       <div class="info-label">
         <span id="infoLabelText">変換候補 / 分析結果</span>
@@ -317,13 +329,6 @@
     </div>
 
     <div class="search-replace-group" id="searchReplaceGroup">
-      <div class="search-footer" id="searchFooterBar">
-        <input type="text" id="searchInput" placeholder="プロンプト内を検索(2文字以上)"
-          oninput="onSearchInput()"
-          onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeSearch(); }">
-        <span id="searchCount" class="search-count"></span>
-        <button class="back-link" onclick="executeSearch()">検索</button>
-      </div>
       <div class="replace-footer" id="replaceFooterBar">
         <input type="text" id="replaceFromInput" placeholder="置換前" oninput="updateReplaceButtonState()">
         <button class="replace-btn" id="replaceBtn" onclick="applyReplace()" disabled>置換→</button>
@@ -3132,7 +3137,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260908_1335approx, " + state.pos;
+    state.pos = "build_20260909_0814, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
