@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content">
 <title>直訳帳プロンプトエディタ (試作)</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
@@ -209,7 +209,6 @@
     display:flex; flex-direction:column; gap:4px;
     padding:4px 12px calc(4px + env(safe-area-inset-bottom, 0px));
     border-top:1.5px solid #454851; background:#17181B;
-    transition:transform 120ms ease;
   }
   #editScreen.search-top .search-replace-group { border-top:none; border-bottom:1.5px solid #454851; }
   .search-footer, .replace-footer { display:flex; align-items:center; gap:6px; }
@@ -3099,43 +3098,14 @@ function navTagNext(){ jumpToNextTag(); }
   });
 })();
 
-/* =========================================================
-   検索・置換欄がキーボードに隠れる対策。
-   以前は画面全体をキーボードの高さぶん動かしていたが、編集中に何度も
-   発火してガタつく問題があり撤去した経緯がある。今回は対象を
-   「検索・置換欄がフォーカスされている時だけ」に絞り、reflowを伴わない
-   transform:translateYで持ち上げることで、同じガタつきを避けている。
-   検索欄が上部表示の時はそもそもキーボードに隠れないので何もしない
-========================================================= */
-(function(){
-  const group = document.querySelector(".search-replace-group");
-  if(!group || !window.visualViewport) return;
-  function isGroupFocused(){
-    const a = document.activeElement;
-    return !!(a && group.contains(a));
-  }
-  function adjust(){
-    const editScreenEl = el("editScreen");
-    if(!isGroupFocused() || (editScreenEl && editScreenEl.classList.contains("search-top"))){
-      group.style.transform = "";
-      return;
-    }
-    const vv = window.visualViewport;
-    const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    group.style.transform = keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : "";
-  }
-  window.visualViewport.addEventListener("resize", adjust);
-  window.visualViewport.addEventListener("scroll", adjust);
-  document.addEventListener("focusin", adjust);
-  document.addEventListener("focusout", () => setTimeout(adjust, 50));
-})();
+
 
 </script>
 <script>
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260908_1201, " + state.pos;
+    state.pos = "build_20260908_1302, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
