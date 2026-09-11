@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content">
+<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>直訳帳プロンプトエディタ (試作)</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
@@ -40,13 +40,13 @@
   .setting-radio-btn.on { background:#E8A33D; border-color:#E8A33D; color:#17181B; font-weight:700; }
 
   * { box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-  html, body { height:100%; height:100dvh; overflow:hidden; }
+  html, body { height:100%; overflow:hidden; }
   body {
     background:#0e0e10; display:flex; justify-content:center;
     font-family:'Zen Kaku Gothic New', sans-serif;
   }
   #app {
-    width:100%; max-width:430px; height:100%; height:100dvh;
+    width:100%; max-width:430px; height:100%;
     background:#17181B; color:#EDEAE2;
     display:flex; flex-direction:column;
     position:relative; overflow:hidden;
@@ -3158,7 +3158,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260911_2043, " + state.pos;
+    state.pos = "build_20260912_0746, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
