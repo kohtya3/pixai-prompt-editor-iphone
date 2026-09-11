@@ -62,7 +62,7 @@
      直下にまとめて配置する(画面下部への固定は、キーボード表示時に
      隠れてしまう問題があったため撤去した) */
   #editScreen.search-hidden .search-replace-group { display:none; }
-  .search-replace-group { flex-shrink:0; padding:6px 16px 0; display:flex; flex-direction:column; gap:6px; }
+  .search-replace-group { flex-shrink:0; padding:0 16px; display:flex; flex-direction:column; gap:8px; }
   .hidden { display:none !important; }
 
   /* header */
@@ -95,7 +95,7 @@
      伸縮させ、区切り線がテキストに対して常に左右均等になるようにする
      (utility-rowと同じ考え方) */
   .cursor-nav-row {
-    display:flex; align-items:center; height:30px; margin-bottom:6px;
+    display:flex; align-items:center; height:30px;
     border:1px solid #3a3c42; border-radius:6px; background:#1c1d20; overflow:hidden;
   }
   .cursor-nav-btn {
@@ -123,7 +123,7 @@
   .tag-underline { border-bottom:1px solid #FF5CA8; }
 
   /* utility row */
-  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; }
+  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; margin-top:8px; }
   .util-btn { flex:1; min-width:0; text-align:center; font-family:'Space Grotesk',sans-serif; font-size:var(--btn-font,10px); color:#c7cad0; background:none; border:none; padding:4px 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .util-btn:not(:first-child) { border-left:1px solid #33353a; }
   .setting-hidden { display:none !important; }
@@ -142,12 +142,12 @@
   .util-btn:disabled { color:#45474b; }
 
   /* lang area (プロンプト欄の直下: 変換/追加 → 重み操作) */
-  .lang-area { flex-shrink:0; border-top:1.5px solid #454851; padding:8px 16px; background:#141518; }
-  .lang-input-wrap { height:40px; background:#1c1d20; border:1px solid #4a4d54; border-radius:5px; margin-bottom:6px; display:flex; align-items:center; padding:0 4px 0 10px; gap:4px; }
+  .lang-area { flex-shrink:0; border-top:1.5px solid #454851; padding:8px 16px; background:#141518; display:flex; flex-direction:column; gap:8px; }
+  .lang-input-wrap { height:40px; background:#1c1d20; border:1px solid #4a4d54; border-radius:5px; display:flex; align-items:center; padding:0 4px 0 10px; gap:4px; }
   #langInput { flex:1; min-width:0; border:none; background:transparent; color:#d9d6cc; font-family:'Zen Kaku Gothic New',sans-serif; font-size:16px; }
   #langInput::placeholder { color:#6a6d73; font-size:16px; }
   .inline-icon { flex-shrink:0; border:none; background:transparent; color:#9a9da3; font-family:'Space Grotesk',sans-serif; font-size:10px; padding:6px 6px; border-left:1px solid #4a4d54; }
-  .lang-btns { display:flex; gap:6px; margin-bottom:8px; }
+  .lang-btns { display:flex; gap:6px; }
   .lang-btns button { flex:1; height:32px; border-radius:5px; border:none; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; }
   .btn-convert { background:#33353a; color:#EDEAE2; }
   .btn-add { background:#E8A33D; color:#17181B; }
@@ -163,7 +163,7 @@
   }
 
   /* info area */
-  .info-area { flex:0 0 var(--info-area-h, 32%); min-height:70px; border-top:1.5px solid #454851; padding:8px 16px; overflow-y:auto; background:#1c1d20; font-size:var(--font-info, 14px); }
+  .info-area { flex:0 0 var(--info-area-h, 32%); min-height:70px; border-top:1.5px solid #454851; padding:8px 16px; overflow-y:auto; background:#1c1d20; font-size:var(--font-info, 14px); margin-top:8px; }
   .info-label { display:flex; justify-content:space-between; align-items:center; font-family:'Space Grotesk',sans-serif; font-size:9px; letter-spacing:0.06em; color:#9a9da3; margin-bottom:6px; }
   .info-clear { border:1px solid #4a4d54; background:#26272b; color:#c7cad0; font-family:'Space Grotesk',sans-serif; font-size:9px; padding:3px 7px; border-radius:4px; }
   .info-chip {
@@ -365,6 +365,9 @@ window.__EMBEDDED_CLIP_MERGES__ = "#version: 0.2 - Trained by `huggingface/token
 let state = { pos: "1girl, (red_hair:1.3), green_eyes, looking_at_viewer", neg: "low_quality, blurry" };
 let dir = "pos";
 let lastCursor = { pos: {start:0,end:0}, neg: {start:0,end:0} };
+// 重複タグのハイライトは「分析」実行直後だけ表示する(常時表示すると選択中
+// タグの下線と色が被って見づらいため)。テキストを直接編集したら再び隠す
+let showDuplicateHighlight = false;
 let savedPrompts = []; // {id,name,pos,neg}
 
 // 保存済みプロンプトをlocalStorageに永続化する(設定と同じ方式)。
@@ -436,6 +439,7 @@ function setDir(d){
   el("btnPos").classList.toggle("active", d==="pos");
   el("btnNeg").classList.toggle("active", d==="neg");
   resetSearchState();
+  showDuplicateHighlight = false; // ポジ/ネガ切替後は重複ハイライトを一旦隠す
   render();
 }
 
@@ -626,6 +630,7 @@ function onPromptInput(){
       ta.setSelectionRange(pos, pos);
     }
     state[dir] = ta.value;
+    showDuplicateHighlight = false; // 直接編集したら重複ハイライトは一旦隠す
     rememberCursor();
     pushHistory();
     ensureCaretVisible();
@@ -646,6 +651,7 @@ function onPromptCompositionEnd(){
     ta.setSelectionRange(pos, pos);
     state[dir] = ta.value;
   }
+  showDuplicateHighlight = false; // 直接編集したら重複ハイライトは一旦隠す
   // 変換が確定してからカーソル位置を記憶する(確定前の中間状態を重み処理に使ってしまうバグの対策)
   rememberCursor();
   pushHistory();
@@ -813,15 +819,18 @@ function updateBackdrop(){
     });
   }
 
-  // 重複タグのハイライト: 種類数に応じて色相を均等割りするので、
-  // 何種類あっても隣同士が同じ色にならない
-  const dupGroups = findDuplicateGroups(text);
-  dupGroups.forEach((g, gi)=>{
-    const color = duplicateGroupColor(gi, dupGroups.length);
-    g.ranges.forEach(r=>{
-      for(let i=r.start; i<r.end && i<n; i++) charShadows[i].push(`0 2px 0 0 ${color}`);
+  // 重複タグのハイライト: 「分析」を実行した直後だけ表示する(常時表示だと
+  // 選択中タグの下線と色が被って見づらい上、テキスト編集の妨げになるため)。
+  // 種類数に応じて色相を均等割りするので、何種類あっても隣同士が同じ色にならない
+  if(showDuplicateHighlight){
+    const dupGroups = findDuplicateGroups(text);
+    dupGroups.forEach((g, gi)=>{
+      const color = duplicateGroupColor(gi, dupGroups.length);
+      g.ranges.forEach(r=>{
+        for(let i=r.start; i<r.end && i<n; i++) charShadows[i].push(`0 2px 0 0 ${color}`);
+      });
     });
-  });
+  }
 
   function sig(idx){ return charClasses[idx] + "|" + charShadows[idx].join(","); }
 
@@ -840,7 +849,12 @@ function updateBackdrop(){
     html += attrs ? `<span${attrs}>${chunk}</span>` : chunk;
     i = j;
   }
-  el("promptBackdrop").innerHTML = html + "\n";
+  const backdropEl = el("promptBackdrop");
+  // SafariでinnerHTML更新後に古い描画が一瞬(まれに継続して)残ることがあるための
+  // 防御策: 一度空にしてから新しい内容を入れ、強制的に再描画させる
+  backdropEl.innerHTML = "";
+  void backdropEl.offsetHeight; // 強制リフロー
+  backdropEl.innerHTML = html + "\n";
 }
 function syncBackdropScroll(){
   const ta = el("promptText");
@@ -1618,7 +1632,7 @@ function findDuplicateGroups(text){
 // 種類が多い時に色が枯渇して別の重複同士が同じ色に見えてしまうため)
 function duplicateGroupColor(index, total){
   const hue = Math.round((360 / Math.max(total, 1)) * index);
-  return `hsl(${hue}, 75%, 62%)`;
+  return `hsl(${hue}, 45%, 55%)`;
 }
 
 // 削除範囲を、隣接するカンマ+空白も含めて広げる(区切りが「,,」のように壊れないように)
@@ -1848,6 +1862,8 @@ function analyzePrompt(){
   ];
   lastAnalysisResult = { tokenInfo, issues };
   renderAnalysisResults(tokenInfo, issues);
+  showDuplicateHighlight = true;
+  updateBackdrop();
 }
 
 function toggleUnknownTagsCollapse(){
@@ -3142,7 +3158,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260909_2016, " + state.pos;
+    state.pos = "build_20260911_1452, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
