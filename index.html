@@ -21,7 +21,7 @@
   .settings-section { margin-bottom:28px; }
   .settings-section-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; cursor:pointer; }
   .settings-section-head h3 { display:flex; align-items:center; gap:6px; }
-  .section-chevron { color:#6f7278; font-size:10px; }
+  .section-chevron { color:#9a9da3; font-size:18px; font-weight:700; line-height:1; }
   .settings-section-body { overflow:hidden; }
   .settings-section-body.collapsed { display:none; }
   .settings-section h3 { font-family:'Space Grotesk',sans-serif; font-size:12px; color:#E8A33D; letter-spacing:0.05em; text-transform:uppercase; }
@@ -62,7 +62,7 @@
      直下にまとめて配置する(画面下部への固定は、キーボード表示時に
      隠れてしまう問題があったため撤去した) */
   #editScreen.search-hidden .search-replace-group { display:none; }
-  .search-replace-group { flex-shrink:0; padding:0 16px; display:flex; flex-direction:column; gap:8px; }
+  .search-replace-group { flex-shrink:0; padding:0 16px; display:flex; flex-direction:column; gap:4px; }
   .hidden { display:none !important; }
 
   /* header */
@@ -95,7 +95,7 @@
      伸縮させ、区切り線がテキストに対して常に左右均等になるようにする
      (utility-rowと同じ考え方) */
   .cursor-nav-row {
-    display:flex; align-items:center; height:30px;
+    display:flex; align-items:center; height:30px; margin-bottom:4px;
     border:1px solid #3a3c42; border-radius:6px; background:#1c1d20; overflow:hidden;
   }
   .cursor-nav-btn {
@@ -123,7 +123,7 @@
   .tag-underline { border-bottom:1px solid #FF5CA8; }
 
   /* utility row */
-  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; margin-top:8px; }
+  .utility-row { height:36px; flex-shrink:0; display:flex; align-items:center; padding:0 16px; border-top:1.5px solid #454851; background:#17181B; margin-top:4px; }
   .util-btn { flex:1; min-width:0; text-align:center; font-family:'Space Grotesk',sans-serif; font-size:var(--btn-font,10px); color:#c7cad0; background:none; border:none; padding:4px 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .util-btn:not(:first-child) { border-left:1px solid #33353a; }
   .setting-hidden { display:none !important; }
@@ -142,12 +142,12 @@
   .util-btn:disabled { color:#45474b; }
 
   /* lang area (プロンプト欄の直下: 変換/追加 → 重み操作) */
-  .lang-area { flex-shrink:0; border-top:1.5px solid #454851; padding:8px 16px; background:#141518; display:flex; flex-direction:column; gap:8px; }
-  .lang-input-wrap { height:40px; background:#1c1d20; border:1px solid #4a4d54; border-radius:5px; display:flex; align-items:center; padding:0 4px 0 10px; gap:4px; }
+  .lang-area { flex-shrink:0; border-top:1.5px solid #454851; padding:4px 16px; background:#141518; display:flex; flex-direction:column; }
+  .lang-input-wrap { height:40px; background:#1c1d20; border:1px solid #4a4d54; border-radius:5px; margin-bottom:4px; display:flex; align-items:center; padding:0 4px 0 10px; gap:4px; }
   #langInput { flex:1; min-width:0; border:none; background:transparent; color:#d9d6cc; font-family:'Zen Kaku Gothic New',sans-serif; font-size:16px; }
   #langInput::placeholder { color:#6a6d73; font-size:16px; }
   .inline-icon { flex-shrink:0; border:none; background:transparent; color:#9a9da3; font-family:'Space Grotesk',sans-serif; font-size:10px; padding:6px 6px; border-left:1px solid #4a4d54; }
-  .lang-btns { display:flex; gap:6px; }
+  .lang-btns { display:flex; gap:6px; margin-bottom:4px; }
   .lang-btns button { flex:1; height:32px; border-radius:5px; border:none; font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; }
   .btn-convert { background:#33353a; color:#EDEAE2; }
   .btn-add { background:#E8A33D; color:#17181B; }
@@ -163,7 +163,7 @@
   }
 
   /* info area */
-  .info-area { flex:0 0 var(--info-area-h, 32%); min-height:70px; border-top:1.5px solid #454851; padding:8px 16px; overflow-y:auto; background:#1c1d20; font-size:var(--font-info, 14px); margin-top:8px; }
+  .info-area { flex:0 0 var(--info-area-h, 32%); min-height:70px; border-top:1.5px solid #454851; padding:8px 16px; overflow-y:auto; background:#1c1d20; font-size:var(--font-info, 14px); }
   .info-label { display:flex; justify-content:space-between; align-items:center; font-family:'Space Grotesk',sans-serif; font-size:9px; letter-spacing:0.06em; color:#9a9da3; margin-bottom:6px; }
   .info-clear { border:1px solid #4a4d54; background:#26272b; color:#c7cad0; font-family:'Space Grotesk',sans-serif; font-size:9px; padding:3px 7px; border-radius:4px; }
   .info-chip {
@@ -3158,7 +3158,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260911_1452, " + state.pos;
+    state.pos = "build_20260911_2043, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
