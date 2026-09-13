@@ -3143,13 +3143,17 @@ function navTagNext(){ jumpToNextTag(); }
   });
   document.addEventListener("focusout", (e) => {
     if(!isTarget(e.target)) return;
+    // 対象欄同士(検索欄→置換欄など)を実際の指でタップし直す場合、
+    // 50ms程度では間に合わず「一旦対象外に出た」と誤判定して復元→再縮小の
+    // ガタつきが起きていた。人間の実際のタップ間隔に余裕を持たせる
     setTimeout(() => {
       if(!isTarget(document.activeElement)){
         promptAreaEl.style.flexBasis = settings.areaHeights.promptArea + "%";
       }
-    }, 50);
+    }, 300);
   });
 })();
+
 
 
 
@@ -3158,7 +3162,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260912_0746, " + state.pos;
+    state.pos = "build_20260913_1758, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
