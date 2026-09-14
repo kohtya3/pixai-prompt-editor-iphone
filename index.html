@@ -290,16 +290,16 @@
 
     <div class="search-replace-group setting-toggleable" id="searchReplaceGroup">
       <div class="search-footer" id="searchFooterBar">
-        <input type="text" id="searchInput" placeholder="プロンプト内を検索(2文字以上)"
+        <input type="text" id="searchInput" enterkeyhint="search" placeholder="プロンプト内を検索(2文字以上)"
           oninput="onSearchInput()"
           onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeSearch(); }">
         <span id="searchCount" class="search-count"></span>
         <button class="back-link" onclick="executeSearch()">検索</button>
       </div>
       <div class="replace-footer" id="replaceFooterBar">
-        <input type="text" id="replaceFromInput" placeholder="置換前" oninput="updateReplaceButtonState()">
+        <input type="text" id="replaceFromInput" enterkeyhint="done" placeholder="置換前" oninput="updateReplaceButtonState()">
         <button class="replace-btn" id="replaceBtn" onclick="applyReplace()" disabled>置換→</button>
-        <input type="text" id="replaceToInput" placeholder="置換後(空欄で削除)" oninput="updateReplaceButtonState()">
+        <input type="text" id="replaceToInput" enterkeyhint="done" placeholder="置換後(空欄で削除)" oninput="updateReplaceButtonState()">
       </div>
     </div>
 
@@ -3139,16 +3139,18 @@ function navTagNext(){ jumpToNextTag(); }
   if(!promptAreaEl) return;
   function isTarget(t){ return !!(t && t.matches && t.matches(TARGET_SELECTOR)); }
   document.addEventListener("focusin", (e) => {
-    if(isTarget(e.target)) promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+    if(isTarget(e.target) && promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
+      promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+    }
   });
   document.addEventListener("focusout", (e) => {
     if(!isTarget(e.target)) return;
-    // 対象欄同士(検索欄→置換欄など)を実際の指でタップし直す場合、
-    // 50ms程度では間に合わず「一旦対象外に出た」と誤判定して復元→再縮小の
-    // ガタつきが起きていた。人間の実際のタップ間隔に余裕を持たせる
     setTimeout(() => {
       if(!isTarget(document.activeElement)){
-        promptAreaEl.style.flexBasis = settings.areaHeights.promptArea + "%";
+        const normalBasis = settings.areaHeights.promptArea + "%";
+        if(promptAreaEl.style.flexBasis !== normalBasis){
+          promptAreaEl.style.flexBasis = normalBasis;
+        }
       }
     }, 300);
   });
@@ -3162,7 +3164,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260913_1758, " + state.pos;
+    state.pos = "build_20260914_1444, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
