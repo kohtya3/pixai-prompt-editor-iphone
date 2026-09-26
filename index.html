@@ -294,11 +294,11 @@
           oninput="onSearchInput()"
           onkeydown="if(event.key==='Enter'){ event.preventDefault(); executeSearch(); }">
         <span id="searchCount" class="search-count"></span>
-        <button class="back-link" onclick="executeSearch()">検索</button>
+        <button class="back-link" onmousedown="event.preventDefault()" onclick="executeSearch()">検索</button>
       </div>
       <div class="replace-footer" id="replaceFooterBar">
         <input type="text" id="replaceFromInput" enterkeyhint="done" placeholder="置換前" oninput="updateReplaceButtonState()">
-        <button class="replace-btn" id="replaceBtn" onclick="applyReplace()" disabled>置換→</button>
+        <button class="replace-btn" id="replaceBtn" onmousedown="event.preventDefault()" onclick="applyReplace()" disabled>置換→</button>
         <input type="text" id="replaceToInput" enterkeyhint="done" placeholder="置換後(空欄で削除)" oninput="updateReplaceButtonState()">
       </div>
     </div>
@@ -3133,20 +3133,45 @@ function navTagNext(){ jumpToNextTag(); }
    高さに関わらず、常に一定の余裕を確保できる)
 ========================================================= */
 (function(){
-  const TARGET_SELECTOR = "#langInput, #searchInput, #replaceFromInput, #replaceToInput";
   const SHRUNK_BASIS = "15%";
   const promptAreaEl = document.getElementById("promptArea");
   if(!promptAreaEl) return;
-  function isTarget(t){ return !!(t && t.matches && t.matches(TARGET_SELECTOR)); }
+  // 個々の入力欄のIDだけでなく、langInputと検索・置換グループ全体(ボタンも含む)への
+  // 所属で判定する。検索・置換ボタンはクリック時にフォーカスがbody等へ移ってしまう
+  // ことがあり、その瞬間だけ見ると「対象から外れた」ように見えて復元→再縮小の
+  // ガタつきが起きていた。そこで「直近に対象グループ内での操作があったか」を
+  // 時刻で記録し、フォーカスが一時的にbody等へ抜けても、直近操作があれば
+  // 復元しないようにする
+  function isTarget(t){
+    if(!t || !t.closest) return false;
+    return !!(t.closest("#langInput") || t.closest(".search-replace-group"));
+  }
+  let lastTargetActivity = 0;
+  const RECENT_MS = 400;
   document.addEventListener("focusin", (e) => {
-    if(isTarget(e.target) && promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
-      promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+    if(isTarget(e.target)){
+      lastTargetActivity = Date.now();
+      if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
+        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+      }
+    }
+  });
+  document.addEventListener("mousedown", (e) => {
+    if(isTarget(e.target)) lastTargetActivity = Date.now();
+  });
+  document.addEventListener("click", (e) => {
+    if(isTarget(e.target)){
+      lastTargetActivity = Date.now();
+      if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
+        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+      }
     }
   });
   document.addEventListener("focusout", (e) => {
     if(!isTarget(e.target)) return;
     setTimeout(() => {
-      if(!isTarget(document.activeElement)){
+      const recentlyActive = (Date.now() - lastTargetActivity) < RECENT_MS;
+      if(!isTarget(document.activeElement) && !recentlyActive){
         const normalBasis = settings.areaHeights.promptArea + "%";
         if(promptAreaEl.style.flexBasis !== normalBasis){
           promptAreaEl.style.flexBasis = normalBasis;
@@ -3164,7 +3189,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_20260914_1444, " + state.pos;
+    state.pos = "build_latest, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
