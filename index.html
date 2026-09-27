@@ -3148,12 +3148,27 @@ function navTagNext(){ jumpToNextTag(); }
   }
   let lastTargetActivity = 0;
   const RECENT_MS = 400;
+  // iOS対策のresetScroll(focusin直後、および100ms後の2回)が強制的に
+  // レイアウトを再計算させるため、それと同時にflex-basisのトランジションを
+  // 開始すると衝突してカクついてしまう。resetScrollの2回目(100ms後)が
+  // 終わってから縮小を始めることで、復元時と同じ滑らかさにする
+  const SHRINK_DELAY_MS = 150;
+  let shrinkTimer = null;
+  function applyShrink(){
+    if(shrinkTimer) return; // 既に予約済みなら重複させない
+    if(promptAreaEl.style.flexBasis === SHRUNK_BASIS) return;
+    shrinkTimer = setTimeout(() => {
+      shrinkTimer = null;
+      // 遅延の間にフォーカスが外れていた場合は縮小しない
+      if(isTarget(document.activeElement)){
+        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+      }
+    }, SHRINK_DELAY_MS);
+  }
   document.addEventListener("focusin", (e) => {
     if(isTarget(e.target)){
       lastTargetActivity = Date.now();
-      if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
-        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
-      }
+      applyShrink();
     }
   });
   document.addEventListener("mousedown", (e) => {
@@ -3162,9 +3177,7 @@ function navTagNext(){ jumpToNextTag(); }
   document.addEventListener("click", (e) => {
     if(isTarget(e.target)){
       lastTargetActivity = Date.now();
-      if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
-        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
-      }
+      applyShrink();
     }
   });
   document.addEventListener("focusout", (e) => {
@@ -3189,7 +3202,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_0927_1945, " + state.pos;
+    state.pos = "build_0927_1955, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
