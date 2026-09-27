@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" id="viewportMeta" content="width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content">
 <title>直訳帳プロンプトエディタ (試作)</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
@@ -40,7 +40,7 @@
   .setting-radio-btn.on { background:#E8A33D; border-color:#E8A33D; color:#17181B; font-weight:700; }
 
   * { box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-  html, body { height:100%; overflow:hidden; }
+  html, body { height:100%; height:100dvh; overflow:hidden; }
   body {
     background:#0e0e10; display:flex; justify-content:center;
     font-family:'Zen Kaku Gothic New', sans-serif;
@@ -3153,12 +3153,9 @@ function navTagNext(){ jumpToNextTag(); }
   }
   let lastTargetActivity = 0;
   const RECENT_MS = 400;
-  // ★検証のため、遅延なしの単純な即時実行に戻しています
-  function applyShrink(){
-    if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
-      promptAreaEl.style.flexBasis = SHRUNK_BASIS;
-    }
-  }
+  // ★検証用: interactive-widget=resizes-content + dvh だけでどこまで解決するか
+  // 切り分けるため、JSによる強制縮小も一旦無効化しています
+  function applyShrink(){}
   document.addEventListener("focusin", (e) => {
     if(isTarget(e.target)){
       lastTargetActivity = Date.now();
@@ -3196,7 +3193,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_0927_2006_resetScrollOFF, " + state.pos;
+    state.pos = "build_0927_2018_dvhTest, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
