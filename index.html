@@ -2516,7 +2516,7 @@ const DEFAULT_SETTINGS = {
 const SETTINGS_SCHEMA = [
   {
     section: "エリアの高さ(画面比率)", type: "slider", path: "areaHeights.promptArea",
-    label: "プロンプトエリア", min:20, max:70, step:1, unit:"%"
+    label: "プロンプトエリア", min:15, max:70, step:1, unit:"%"
   },
   {
     section: "エリアの高さ(画面比率)", type: "slider", path: "areaHeights.infoArea",
@@ -3189,7 +3189,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_latest, " + state.pos;
+    state.pos = "build_0927_1945, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
