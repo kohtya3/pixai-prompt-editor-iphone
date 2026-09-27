@@ -3062,6 +3062,10 @@ document.addEventListener("click", (e) => {
    スクロール位置を元へ戻すことで「画面全体が意図せず動く」現象を防ぐ
 ========================================================= */
 (function(){
+  // ★検証用: 縮小時の「画面がガクッと落ちて戻る」現象の原因切り分けのため、
+  // このブロック全体を一時的に無効化しています(原因が特定でき次第、元に戻します)
+  return;
+  /*
   const editScreenEl = el("editScreen");
   if(!editScreenEl) return;
   function resetScroll(){
@@ -3075,6 +3079,7 @@ document.addEventListener("click", (e) => {
       setTimeout(resetScroll, 100); // iOSの自動スクロールが遅れて発生する場合の保険
     }
   });
+  */
 })();
 
 /* =========================================================
@@ -3148,22 +3153,11 @@ function navTagNext(){ jumpToNextTag(); }
   }
   let lastTargetActivity = 0;
   const RECENT_MS = 400;
-  // iOS対策のresetScroll(focusin直後、および100ms後の2回)が強制的に
-  // レイアウトを再計算させるため、それと同時にflex-basisのトランジションを
-  // 開始すると衝突してカクついてしまう。resetScrollの2回目(100ms後)が
-  // 終わってから縮小を始めることで、復元時と同じ滑らかさにする
-  const SHRINK_DELAY_MS = 150;
-  let shrinkTimer = null;
+  // ★検証のため、遅延なしの単純な即時実行に戻しています
   function applyShrink(){
-    if(shrinkTimer) return; // 既に予約済みなら重複させない
-    if(promptAreaEl.style.flexBasis === SHRUNK_BASIS) return;
-    shrinkTimer = setTimeout(() => {
-      shrinkTimer = null;
-      // 遅延の間にフォーカスが外れていた場合は縮小しない
-      if(isTarget(document.activeElement)){
-        promptAreaEl.style.flexBasis = SHRUNK_BASIS;
-      }
-    }, SHRINK_DELAY_MS);
+    if(promptAreaEl.style.flexBasis !== SHRUNK_BASIS){
+      promptAreaEl.style.flexBasis = SHRUNK_BASIS;
+    }
   }
   document.addEventListener("focusin", (e) => {
     if(isTarget(e.target)){
@@ -3202,7 +3196,7 @@ function navTagNext(){ jumpToNextTag(); }
 // 出力バージョン確認用タグ(テスト目的、生成のたびに自動更新)
 (function(){
   try {
-    state.pos = "build_0927_1955, " + state.pos;
+    state.pos = "build_0927_2006_resetScrollOFF, " + state.pos;
     if (typeof render === "function") render();
   } catch(e) {}
 })();
